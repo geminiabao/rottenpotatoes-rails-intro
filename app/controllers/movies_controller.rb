@@ -11,9 +11,15 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @movies = Movie.where(rating: rating_filter).order(params[:sort])
+    @sort = params[:sort] || session[:sort]
     @all_ratings = Movie.ratings
-    @selected_ratings = params[:ratings] || @all_ratings
+    @selected_ratings = params[:ratings] || session[:ratings] || {}
+    if params[:sort] != session[:sort] or params[:ratings] != session[:ratings]
+      session[:sort] = @sort
+      session[:ratings] = @selected_ratings
+      redirect_to :sort => @sort, :ratings => @selected_ratings and return
+    end
+    @movies = Movie.order(@sort).where(rating: @selected_ratings.keys)
   end
 
   def new
@@ -42,14 +48,6 @@ class MoviesController < ApplicationController
     @movie.destroy
     flash[:notice] = "Movie '#{@movie.title}' deleted."
     redirect_to movies_path
-  end
-  
-  def rating_filter
-      if params[:commit] == 'Refresh'
-        params[:ratings].keys
-      else
-        Movie.ratings
-      end
   end
 
 end
